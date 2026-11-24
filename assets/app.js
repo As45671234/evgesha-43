@@ -79,11 +79,11 @@
     var btns = document.querySelectorAll("[data-toggle-color]");
     Array.prototype.forEach.call(btns, function (b) {
       b.addEventListener("click", function () {
-        var on = document.body.classList.toggle("in-color");
+        var mono = document.body.classList.toggle("mono");
         Array.prototype.forEach.call(btns, function (x) {
-          x.setAttribute("aria-pressed", on ? "true" : "false");
+          x.setAttribute("aria-pressed", mono ? "false" : "true");
           var lbl = x.querySelector("span");
-          if (lbl) lbl.textContent = on ? "Цвет" : "Ч/Б";
+          if (lbl) lbl.textContent = mono ? "Ч/Б" : "Цвет";
         });
       });
     });
