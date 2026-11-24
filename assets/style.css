@@ -217,27 +217,33 @@ body.mono .tile img { filter: grayscale(1) contrast(1.07) brightness(1.02); }
 @media (hover: hover) { body.mono .tile:hover img { filter: grayscale(1) contrast(1.14) brightness(1.08); } }
 
 /* переключатель цвета */
-.toggle { display: inline-flex; align-items: center; gap: 9px; padding: 8px 15px; border: 1px solid var(--line); border-radius: 100px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); transition: color .3s, border-color .3s, background .3s; }
-.toggle:hover { color: var(--ink); border-color: rgba(255,255,255,.3); }
-.toggle i { width: 7px; height: 7px; border-radius: 50%; background: #e6e8ea; box-shadow: 0 0 10px rgba(255,255,255,.55); transition: background .3s, box-shadow .3s; }
-body.mono .toggle i { background: #5a5a62; box-shadow: none; }
+.sec-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 9px; padding: 8px 15px; border: 1px solid var(--line); border-radius: 100px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); text-decoration: none; white-space: nowrap; transition: color .3s, border-color .3s, background .3s; }
+.pill:hover { color: var(--ink); border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.04); }
+.pill i { width: 7px; height: 7px; border-radius: 50%; background: #e6e8ea; box-shadow: 0 0 10px rgba(255,255,255,.55); transition: background .3s, box-shadow .3s; }
+body.mono .pill i { background: #5a5a62; box-shadow: none; }
+.pill--dl svg { opacity: .8; }
+.pill--dl:hover svg { opacity: 1; }
 
 /* ——————————————————————— ЛАЙТБОКС ——————————————————————— */
 
 .lb { position: fixed; inset: 0; z-index: 100; display: none; background: rgba(6,6,7,.97); backdrop-filter: blur(8px); }
 .lb.on { display: block; }
-.lb__stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: clamp(44px, 7vh, 80px) clamp(12px, 7vw, 92px); }
+.lb__stage { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: clamp(44px, 7vh, 80px) clamp(12px, 7vw, 92px); }
 .lb__img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; filter: contrast(1.02); opacity: 0; transition: opacity .35s ease; border-radius: 2px; }
 .lb__img.ready { opacity: 1; }
 body.mono .lb__img { filter: grayscale(1) contrast(1.05); }
 
-.lb__bar { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px clamp(14px, 3vw, 26px); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.lb__bar { position: absolute; left: 0; right: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px clamp(14px, 3vw, 26px); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
 .lb__bar--top { top: 0; background: linear-gradient(180deg, rgba(0,0,0,.6), transparent); }
 .lb__bar--bot { bottom: 0; background: linear-gradient(0deg, rgba(0,0,0,.6), transparent); justify-content: center; }
+.lb__tools { display: inline-flex; align-items: center; gap: 4px; }
+.lb__dl { display: grid; place-items: center; padding: 6px 9px; color: var(--muted); text-decoration: none; transition: color .25s; }
+.lb__dl:hover { color: #fff; }
 .lb__x { font-size: 24px; line-height: 1; padding: 4px 10px; color: var(--muted); transition: color .25s; }
 .lb__x:hover { color: #fff; }
 
-.lb__nav { position: absolute; top: 50%; transform: translateY(-50%); width: clamp(42px, 6vw, 62px); height: clamp(42px, 6vw, 62px); display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); font-size: 17px; transition: color .25s, border-color .25s, background .25s; }
+.lb__nav { position: absolute; z-index: 2; top: 50%; transform: translateY(-50%); width: clamp(42px, 6vw, 62px); height: clamp(42px, 6vw, 62px); display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); font-size: 17px; transition: color .25s, border-color .25s, background .25s; }
 .lb__nav:hover { color: #fff; border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.06); }
 .lb__nav--prev { left: clamp(8px, 2vw, 22px); }
 .lb__nav--next { right: clamp(8px, 2vw, 22px); }

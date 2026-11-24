@@ -95,8 +95,9 @@
   var lbImg   = document.getElementById("lbImg");
   var lbCount = document.getElementById("lbCount");
   var lbTime  = document.getElementById("lbTime");
+  var lbDl    = document.getElementById("lbDl");
   var items   = tiles.map(function (t) {
-    return { full: t.dataset.full, time: t.dataset.time || "" };
+    return { id: t.dataset.id, full: t.dataset.full, time: t.dataset.time || "" };
   });
   var cur = -1, lastFocus = null;
 
@@ -116,6 +117,10 @@
     if (lbImg.complete) lbImg.classList.add("ready");
     lbCount.textContent = (cur + 1) + " / " + items.length;
     lbTime.textContent = it.time;
+    if (lbDl) {
+      lbDl.href = "photos/dl/" + it.id + ".jpg";
+      lbDl.setAttribute("download", "evgesha-43-" + it.id + ".jpg");
+    }
     preload(cur + 1); preload(cur - 1);
   }
 
@@ -161,6 +166,10 @@
       lbImg.alt = "Афиша вечеринки";
       lbCount.textContent = "Афиша";
       lbTime.textContent = "";
+      if (lbDl) {
+        lbDl.href = "poster.webp";
+        lbDl.setAttribute("download", "evgesha-43-afisha.webp");
+      }
       var x = lb.querySelector(".lb__x");
       if (x) x.focus();
     });
