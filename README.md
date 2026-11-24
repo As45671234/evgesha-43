@@ -26,8 +26,9 @@ https://as45671234.github.io/evgesha-43/
     assets/                 стили и скрипт галереи
     photos/thumb            900 px, сетка
     photos/full             2000 px, просмотр
-    photos/dl               2000 px JPEG, кнопка «скачать кадр»
-    evgesha-43-photos.zip   архив для кнопки «скачать все»
+    photos/dl               полное разрешение, JPEG q94 — кнопка «скачать кадр»
+    evgesha-43-photos-*.zip архивы «скачать все», части по ~85 МБ
+    downloads.json          список архивов для страницы
     photos.json             порядок, размеры, время, заглушки
 
 EXIF и GPS вырезаны из всех снимков: в оригиналах были координаты заведения.

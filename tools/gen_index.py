@@ -11,9 +11,10 @@ AGE = "43 года"
 DATE_HUMAN = "21 ноября 2026"
 VENUE = "Atmosfera Music"
 ADDR = "Кабанбай батыра, 49"
-ZIP_NAME = "evgesha-43-photos.zip"
 
 photos = json.load(open(os.path.join(ROOT, "photos.json"), encoding="utf-8"))
+dl_path = os.path.join(ROOT, "downloads.json")
+downloads = json.load(open(dl_path, encoding="utf-8")) if os.path.exists(dl_path) else []
 
 
 def ver(rel):
@@ -29,9 +30,6 @@ def hhmm(t):
 times = [hhmm(p["time"]) for p in photos if p.get("time")]
 span = f"{times[0]} — {times[-1]}" if times else ""
 
-zip_path = os.path.join(ROOT, ZIP_NAME)
-zip_mb = round(os.path.getsize(zip_path) / 1048576) if os.path.exists(zip_path) else 0
-
 ICON_DL = ('<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" '
            'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
            '<path d="M12 3.5v11.5m0 0 4.2-4.2M12 15l-4.2-4.2"/>'
@@ -40,6 +38,34 @@ ICON_DL = ('<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="
 SPARK = ('<svg class="spark" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">'
          '<path d="M12 0c.6 6.3 5.1 10.8 12 12-6.9 1.2-11.4 5.7-12 12-.6-6.3-5.1-10.8-12-12'
          'C6.9 10.8 11.4 6.3 12 0z" fill="currentColor"/></svg>')
+
+def dl_pill(href, label):
+    return (f'<a class="pill pill--dl" href="{href}" download>{ICON_DL}'
+            f'<span>{label}</span></a>')
+
+
+dl_mb = sum(d["mb"] for d in downloads)
+if len(downloads) == 1:
+    dl_html = dl_pill(downloads[0]["name"], f"Скачать все · {dl_mb} МБ")
+elif downloads:
+    parts = "".join(dl_pill(d["name"], f'{d["from"]}–{d["to"]} · {d["mb"]} МБ')
+                    for d in downloads)
+    dl_html = ('<span class="dl-parts"><span class="dl-parts__lab">Скачать все'
+               f' · {dl_mb} МБ</span>{parts}</span>')
+else:
+    dl_html = ""
+
+# самое частое разрешение среди кадров — его и указываем в подписи
+res = {}
+for p in photos:
+    res[(p["w"], p["h"])] = res.get((p["w"], p["h"]), 0) + 1
+bw, bh = max(res, key=res.get) if res else (0, 0)
+mp = round(bw * bh / 1e6)
+dl_note = (f"Кадры скачиваются в полном разрешении оригинала — {bw}×{bh}, {mp} Мп, "
+           "без сжатия под веб. Нужен один кадр — откройте его и нажмите "
+           "стрелку вниз в правом верхнем углу."
+           + (f" Архив разбит на {len(downloads)} части, каждая распаковывается"
+              " отдельно." if len(downloads) > 1 else ""))
 
 hero_ids = [photos[i]["id"] for i in (4, 22, 36, 49, 12) if i < len(photos)]
 hero_imgs = "\n".join(
@@ -128,11 +154,10 @@ doc = f"""<!doctype html>
         <button class="pill" data-toggle-color aria-pressed="true">
           <i aria-hidden="true"></i><span>Цвет</span>
         </button>
-        <a class="pill pill--dl" href="{ZIP_NAME}" download>
-          {ICON_DL}<span>Скачать все · {zip_mb} МБ</span>
-        </a>
+        {dl_html}
       </div>
     </div>
+    <p class="dl-note">{dl_note}</p>
 
     <div class="grid" id="grid">
 {tiles}
@@ -171,4 +196,5 @@ doc = f"""<!doctype html>
 
 with open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8") as f:
     f.write(doc)
-print("index.html: %d байт · %d фото · %s · архив %d МБ" % (len(doc), len(photos), span, zip_mb))
+print("index.html: %d байт · %d фото · %s · скачивание %d МБ в %d частях"
+      % (len(doc), len(photos), span, dl_mb, len(downloads)))

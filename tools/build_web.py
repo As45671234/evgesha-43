@@ -1,19 +1,22 @@
 """Оригиналы с телефона -> веб-версии для альбома.
 
-На каждый снимок: full (2000 px по длинной стороне), thumb (900 px)
-и крошечная размытая заглушка для плавной загрузки.
-EXIF и GPS вырезаются. Пишет photos.json: порядок, размеры, время, заглушка.
+На каждый снимок: full (2000 px по длинной стороне) и thumb (900 px) для показа,
+dl (полное разрешение, q92) для скачивания и крошечная размытая заглушка.
+EXIF и GPS вырезаются. Пишет photos.json: порядок, размеры, время, заглушка,
+и downloads.json: архивы «скачать все».
 
     python tools/build_web.py <папка-с-оригиналами> <корень-альбома>
 """
-import os, sys, glob, json, base64, io, time, zipfile
+import os, sys, glob, json, base64, io, time, math, zipfile
 from PIL import Image, ImageOps
 from PIL.ExifTags import TAGS
 import pillow_heif
 
 pillow_heif.register_heif_opener()
 
-ZIP_NAME = "evgesha-43-photos.zip"
+ZIP_PREFIX = "evgesha-43-photos"
+ZIP_LIMIT = 85 * 1048576     # GitHub не принимает файлы больше 100 МБ
+DL_QUALITY = 94              # полное разрешение; 4:2:0 как в самом HEIC
 
 EXTS = (".heic", ".heif", ".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff")
 
@@ -69,9 +72,10 @@ def main(src_dir, out_root):
         full.thumbnail((2000, 2000), Image.LANCZOS)
         full.save(os.path.join(full_dir, slug + ".webp"), "WEBP", quality=82, method=5)
 
-        # JPEG для скачивания: webp открывается не везде, JPEG — везде
-        full.save(os.path.join(dl_dir, slug + ".jpg"), "JPEG",
-                  quality=85, subsampling=0, optimize=True, progressive=True)
+        # Для скачивания — полное разрешение оригинала, без уменьшения.
+        # JPEG, а не webp или heic: открывается везде.
+        im.save(os.path.join(dl_dir, slug + ".jpg"), "JPEG",
+                quality=DL_QUALITY, subsampling=2, optimize=True, progressive=True)
 
         th = im.copy()
         th.thumbnail((900, 900), Image.LANCZOS)
@@ -99,16 +103,49 @@ def main(src_dir, out_root):
                 os.remove(os.path.join(d, name))
                 removed += 1
 
-    # архив «скачать все» — статическому хостингу его на лету не собрать
-    zip_path = os.path.join(out_root, ZIP_NAME)
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_STORED) as z:
-        for m in meta:
-            z.write(os.path.join(dl_dir, m["id"] + ".jpg"),
-                    arcname="evgesha-43-%s.jpg" % m["id"])
-    print("архив: %s, %.0f МБ" % (ZIP_NAME, os.path.getsize(zip_path) / 1048576))
+    # Архивы «скачать все» — статическому хостингу их на лету не собрать.
+    # Делим на самостоятельные части: каждая распаковывается сама по себе.
+    sizes = [os.path.getsize(os.path.join(dl_dir, m["id"] + ".jpg")) for m in meta]
+    total = sum(sizes)
+    parts = max(1, math.ceil(total / ZIP_LIMIT))
+    target = total / parts
+
+    chunks, cur, cur_size = [], [], 0
+    for m, sz in zip(meta, sizes):
+        if cur and cur_size + sz > target and len(chunks) < parts - 1:
+            chunks.append(cur); cur, cur_size = [], 0
+        cur.append(m); cur_size += sz
+    if cur:
+        chunks.append(cur)
+
+    downloads = []
+    for n, chunk in enumerate(chunks, 1):
+        name = "%s.zip" % ZIP_PREFIX if len(chunks) == 1 else "%s-%d.zip" % (ZIP_PREFIX, n)
+        path = os.path.join(out_root, name)
+        with zipfile.ZipFile(path, "w", zipfile.ZIP_STORED) as z:
+            for m in chunk:
+                z.write(os.path.join(dl_dir, m["id"] + ".jpg"),
+                        arcname="evgesha-43-%s.jpg" % m["id"])
+        downloads.append({
+            "name": name, "part": n, "parts": len(chunks),
+            "from": int(chunk[0]["id"]), "to": int(chunk[-1]["id"]),
+            "count": len(chunk),
+            "mb": round(os.path.getsize(path) / 1048576),
+        })
+        print("архив %s: кадры %d-%d, %d МБ"
+              % (name, downloads[-1]["from"], downloads[-1]["to"], downloads[-1]["mb"]))
+
+    keep_zips = {d["name"] for d in downloads}
+    for name in os.listdir(out_root):
+        if name.endswith(".zip") and name not in keep_zips:
+            os.remove(os.path.join(out_root, name)); removed += 1
 
     with open(os.path.join(out_root, "photos.json"), "w", encoding="utf-8") as fh:
         json.dump(meta, fh, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(out_root, "downloads.json"), "w", encoding="utf-8") as fh:
+        json.dump(downloads, fh, ensure_ascii=False, separators=(",", ":"))
+    print("для скачивания: %d кадров, %.0f МБ, частей %d"
+          % (len(meta), total / 1048576, len(chunks)))
 
     for name, err in failed:
         print("не прочитался:", name, "-", err)
